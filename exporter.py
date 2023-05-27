@@ -4,6 +4,16 @@ import time
 from prometheus_client import start_http_server, Gauge
 
 url_numero_pessoas = "http://api.open-notify.org/astros.json"
+url_local_ISS = "http://api.open-notify.org/iss-now.json"
+
+def pega_local_ISS():
+    try:
+        response = requests.get(url_local_ISS)
+        data = response.json()
+        return data['iss_position']
+    except Exception as e:
+        print("Tivemos problemas para acessar a URL para capturar a localização")
+        raise e        
 
 def pega_numero_astronautas():
     try:
@@ -17,10 +27,17 @@ def pega_numero_astronautas():
 def atualiza_metricas():
     try:
         numero_pessoas = Gauge('numero_de_astronautas', 'Número de astronautas no espaço')
+        longitude = Gauge('longitude_iss', 'Longitude atual da ISS')
+        latitude = Gauge('latitude_iss', 'Latitude atual da ISS')
+
         while True:
             numero_pessoas.set(pega_numero_astronautas())
+            longitude.set(pega_local_ISS()['longitude'])
+            latitude.set(pega_local_ISS()['latitude'])
             time.sleep(10)
             print("O número de Astronautas no espaço nesse momento é: %s" %pega_numero_astronautas())
+            print("A longitude atual da ISS é: %s" % (pega_local_ISS()['longitude']))
+            print("A latitude atual da ISS é: %s" % (pega_local_ISS()['latitude']))
     except Exception as e:
         print("Tivemos problemas em atualizar a métrica")
         raise e
